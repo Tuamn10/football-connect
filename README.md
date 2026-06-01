@@ -22,10 +22,13 @@ Hệ thống cho phép người dùng đăng bài tìm kèo, tham gia trận đ�
 
 ## 4. Công nghệ sử dụng
 
-- Frontend: ReactJS
-- Backend: Laravel
-- Database: MySQL
-- Map: Leaflet + OpenStreetMap
+- Mobile App: React Native Expo
+- Backend: FastAPI
+- Database: PostgreSQL + PostGIS
+- Map: OpenStreetMap
+- Routing: OSRM
+- AI: KNN, NLP, LLM
+- Ngôn ngữ lập trình: Python, JavaScript, SQL
 - Version Control: GitHub
 
 ## 5. Chức năng chính
@@ -58,3 +61,11 @@ Hệ thống cho phép người dùng đăng bài tìm kèo, tham gia trận đ�
 - Quản lý sân bóng.
 - Quản lý báo cáo vi phạm.
 - Xem thống kê hệ thống.
+
+## 6. Cấu trúc thư mục
+
+football-connect/
+├── backend/
+├── mobile/
+├── documents/
+└── README.md
