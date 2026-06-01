@@ -69,3 +69,8 @@ football-connect/
 ├── mobile/
 ├── documents/
 └── README.md
+
+## Hướng dẫn chạy dự án
+
+- Backend FastAPI: xem tại `documents/backend-setup.md`
+- Mobile React Native Expo: xem tại `mobile/README.md`
