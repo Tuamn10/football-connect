@@ -53,3 +53,18 @@ def update_post(
 def delete_post(db: Session, post: Post):
     db.delete(post)
     db.commit()
+ 
+    
+def get_feed_posts(
+    db: Session,
+    skip: int = 0,
+    limit: int = 20,
+):
+    return (
+        db.query(Post)
+        .filter(Post.status == "open")
+        .order_by(Post.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )

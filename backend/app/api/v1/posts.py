@@ -10,6 +10,7 @@ from app.services.field_service import get_field_by_id
 from app.services.post_service import (
     create_post,
     delete_post,
+    get_feed_posts,
     get_my_posts,
     get_post_by_id,
     update_post,
@@ -18,6 +19,19 @@ from app.services.post_service import (
 router = APIRouter()
 
 
+@router.get("", response_model=list[PostResponse])
+def list_feed_posts(
+    skip: int = 0,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    return get_feed_posts(
+        db=db,
+        skip=skip,
+        limit=limit,
+    )
+    
+    
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 def create_new_post(
     post_data: PostCreate,
