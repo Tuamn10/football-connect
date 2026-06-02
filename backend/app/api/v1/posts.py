@@ -15,6 +15,8 @@ from app.services.post_service import (
     get_post_by_id,
     update_post,
 )
+from datetime import datetime
+
 
 router = APIRouter()
 
@@ -23,12 +25,28 @@ router = APIRouter()
 def list_feed_posts(
     skip: int = 0,
     limit: int = 20,
+    keyword: str | None = None,
+    area: str | None = None,
+    post_type: str | None = None,
+    field_type: str | None = None,
+    required_level: str | None = None,
+    status: str | None = "open",
+    match_from: datetime | None = None,
+    match_to: datetime | None = None,
     db: Session = Depends(get_db),
 ):
     return get_feed_posts(
         db=db,
         skip=skip,
         limit=limit,
+        keyword=keyword,
+        area=area,
+        post_type=post_type,
+        field_type=field_type,
+        required_level=required_level,
+        status=status,
+        match_from=match_from,
+        match_to=match_to,
     )
     
     

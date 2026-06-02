@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.post import Post
 from app.schemas.post import PostCreate, PostUpdate
+from datetime import datetime
 
 
 def create_post(
@@ -59,11 +60,47 @@ def get_feed_posts(
     db: Session,
     skip: int = 0,
     limit: int = 20,
+    keyword: str | None = None,
+    area: str | None = None,
+    post_type: str | None = None,
+    field_type: str | None = None,
+    required_level: str | None = None,
+    status: str | None = "open",
+    match_from: datetime | None = None,
+    match_to: datetime | None = None,
 ):
+    query = db.query(Post)
+
+    if status:
+        query = query.filter(Post.status == status)
+
+    if keyword:
+        search_keyword = f"%{keyword}%"
+        query = query.filter(
+            (Post.title.ilike(search_keyword))
+            | (Post.description.ilike(search_keyword))
+        )
+
+    if area:
+        query = query.filter(Post.area.ilike(f"%{area}%"))
+
+    if post_type:
+        query = query.filter(Post.post_type == post_type)
+
+    if field_type:
+        query = query.filter(Post.field_type == field_type)
+
+    if required_level:
+        query = query.filter(Post.required_level == required_level)
+
+    if match_from:
+        query = query.filter(Post.match_time >= match_from)
+
+    if match_to:
+        query = query.filter(Post.match_time <= match_to)
+
     return (
-        db.query(Post)
-        .filter(Post.status == "open")
-        .order_by(Post.id.desc())
+        query.order_by(Post.id.desc())
         .offset(skip)
         .limit(limit)
         .all()
