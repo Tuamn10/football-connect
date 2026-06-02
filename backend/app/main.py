@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.health import router as health_router
 from app.api.v1.database import router as database_router
+from app.api.v1.auth import router as auth_router
 
 app = FastAPI(
     title="Football Connect API",
@@ -36,3 +37,4 @@ def root():
 
 app.include_router(health_router, prefix="/api/v1", tags=["Health"])
 app.include_router(database_router, prefix="/api/v1", tags=["Database"])
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
