@@ -8,6 +8,7 @@ from app.api.v1.permissions import router as permissions_router
 from app.api.v1.profile import router as profile_router
 from app.api.v1.fields import router as fields_router
 from app.api.v1.posts import router as posts_router
+from app.api.v1.participants import router as participants_router
 
 app = FastAPI(
     title="Football Connect API",
@@ -61,4 +62,9 @@ app.include_router(
     posts_router,
     prefix="/api/v1/posts",
     tags=["Posts"],
+)
+app.include_router(
+    participants_router,
+    prefix="/api/v1",
+    tags=["Match Participants"],
 )

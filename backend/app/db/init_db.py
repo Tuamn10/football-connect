@@ -5,6 +5,7 @@ from app.db.session import engine
 from app.models.user import User  # noqa: F401
 from app.models.football_field import FootballField  # noqa: F401
 from app.models.post import Post  # noqa: F401
+from app.models.match_participant import MatchParticipant  # noqa: F401
 
 
 def init_db():
