@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app.api.deps import get_current_user
 from app.core.roles import ROLE_ADMIN
@@ -15,7 +16,6 @@ from app.services.post_service import (
     get_post_by_id,
     update_post,
 )
-from datetime import datetime
 
 
 router = APIRouter()
@@ -79,6 +79,20 @@ def list_my_posts(
 ):
     return get_my_posts(db=db, user_id=current_user.id)
 
+@router.get("/{post_id}", response_model=PostResponse)
+def get_post_detail(
+    post_id: int,
+    db: Session = Depends(get_db),
+):
+    post = get_post_by_id(db=db, post_id=post_id)
+
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+
+    return post
 
 @router.put("/{post_id}", response_model=PostResponse)
 def update_existing_post(
