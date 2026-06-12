@@ -13,6 +13,7 @@ from app.api.v1.saved_posts import router as saved_posts_router
 from app.api.v1.schedule import router as schedule_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.field_reviews import router as field_reviews_router
+from app.api.v1.admin import router as admin_router
 
 app = FastAPI(
     title="Football Connect API",
@@ -91,4 +92,9 @@ app.include_router(
     field_reviews_router,
     prefix="/api/v1",
     tags=["Field Reviews"],
+)
+app.include_router(
+    admin_router,
+    prefix="/api/v1/admin",
+    tags=["Admin"],
 )
