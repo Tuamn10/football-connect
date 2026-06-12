@@ -11,6 +11,7 @@ from app.api.v1.posts import router as posts_router
 from app.api.v1.participants import router as participants_router
 from app.api.v1.saved_posts import router as saved_posts_router
 from app.api.v1.schedule import router as schedule_router
+from app.api.v1.reports import router as reports_router
 
 app = FastAPI(
     title="Football Connect API",
@@ -79,4 +80,9 @@ app.include_router(
     schedule_router,
     prefix="/api/v1/schedule",
     tags=["Schedule"],
+)
+app.include_router(
+    reports_router,
+    prefix="/api/v1",
+    tags=["Reports"],
 )
