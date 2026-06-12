@@ -4,3 +4,4 @@ from app.models.post import Post
 from app.models.match_participant import MatchParticipant
 from app.models.saved_post import SavedPost
 from app.models.report import Report
+from app.models.field_review import FieldReview

@@ -8,6 +8,7 @@ from app.models.post import Post  # noqa: F401
 from app.models.match_participant import MatchParticipant  # noqa: F401
 from app.models.saved_post import SavedPost  # noqa: F401
 from app.models.report import Report  # noqa: F401
+from app.models.field_review import FieldReview  # noqa: F401
 
 
 def init_db():
