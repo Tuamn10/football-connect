@@ -21,6 +21,23 @@ export function getApiErrorMessage(
     return detail;
   }
 
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        const location = Array.isArray(item?.loc)
+          ? item.loc.join(" → ")
+          : "";
+
+        const message =
+          item?.msg || "Dữ liệu chưa hợp lệ.";
+
+        return location
+          ? `${location}: ${message}`
+          : message;
+      })
+      .join("\n");
+  }
+
   if (status === 401) {
     return "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.";
   }
