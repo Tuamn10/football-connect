@@ -1,4 +1,5 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
@@ -33,3 +34,5 @@ class MatchParticipant(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+    user = relationship("User")

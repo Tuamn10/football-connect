@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.match_participant import MatchParticipant
 from app.models.post import Post
@@ -72,6 +72,7 @@ def get_participants_by_post(
 ):
     return (
         db.query(MatchParticipant)
+        .options(joinedload(MatchParticipant.user))
         .filter(MatchParticipant.post_id == post_id)
         .order_by(MatchParticipant.id.desc())
         .all()

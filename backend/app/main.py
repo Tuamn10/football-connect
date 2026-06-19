@@ -21,16 +21,18 @@ app = FastAPI(
     version="1.0.0",
 )
 
-origins = [
-    "http://localhost:19006",
-    "http://localhost:8081",
-    "http://localhost:3000",
-    "http://localhost:5173",
-]
+# Tạm thời vô hiệu hóa danh sách IP cụ thể này để test App di động
+# origins = [
+#     "http://localhost:19006",
+#     "http://localhost:8081",
+#     "http://localhost:3000",
+#     "http://localhost:5173",
+# ]
 
+# Thay bằng cấu hình mở toang cửa cho mọi thiết bị:
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"], # Dấu * nghĩa là ai cũng gọi được
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
