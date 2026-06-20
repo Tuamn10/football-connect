@@ -8,6 +8,6 @@
 //
 // Không dùng 127.0.0.1 trên điện thoại thật.
 
-export const API_BASE_URL = "http://192.168.2.197:8000";
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.2.197:8000";
 
 export const API_TIMEOUT = 12000;

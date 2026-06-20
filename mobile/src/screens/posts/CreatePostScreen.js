@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import AppInput from "../../components/AppInput";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -64,6 +65,33 @@ export default function CreatePostScreen({ navigation }) {
   
   const [loading, setLoading] = useState(false);
 
+  const [matchDate, setMatchDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    d.setHours(18, 0, 0, 0);
+    return d;
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const newDate = new Date(matchDate);
+      newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      setMatchDate(newDate);
+    }
+  };
+
+  const handleTimeChange = (event, selectedTime) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      const newDate = new Date(matchDate);
+      newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+      setMatchDate(newDate);
+    }
+  };
+
   const handleCreatePost = async () => {
     if (!title.trim() || !area.trim() || !neededPlayers.trim()) {
       Alert.alert("Thiếu thông tin", "Vui lòng nhập đủ Tiêu đề, Khu vực và Số người cần.");
@@ -71,18 +99,20 @@ export default function CreatePostScreen({ navigation }) {
     }
 
     try {
-      setLoading(true);
+      const now = new Date();
+      if (matchDate <= now) {
+        Alert.alert("Lỗi thời gian", "Vui lòng chọn thời gian thi đấu trong tương lai.");
+        return;
+      }
 
-      // Tạo ngày giờ giả lập: Lấy giờ hiện tại cộng thêm 2 ngày
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 2);
+      setLoading(true);
 
       const postData = {
         title: title.trim(),
         description: description.trim(),
         post_type: postType,
         area: area.trim(),
-        match_time: futureDate.toISOString(),
+        match_time: matchDate.toISOString(),
         needed_players: parseInt(neededPlayers) || 1,
         current_players: 0,
         field_type: "5",
@@ -188,12 +218,48 @@ export default function CreatePostScreen({ navigation }) {
             onChangeText={setArea}
           />
 
-          <AppInput
-            label="Thời gian (Hệ thống tự lấy ngày kia)"
-            icon="time-outline"
-            placeholder="Tạm ẩn lịch chọn ngày"
-            editable={false}
-          />
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Pressable onPress={() => setShowDatePicker(true)} style={{ flex: 1, marginRight: 8 }}>
+              <View pointerEvents="none">
+                <AppInput
+                  label="Ngày thi đấu"
+                  icon="calendar-outline"
+                  value={matchDate.toLocaleDateString("vi-VN")}
+                  editable={false}
+                />
+              </View>
+            </Pressable>
+
+            <Pressable onPress={() => setShowTimePicker(true)} style={{ flex: 1, marginLeft: 8 }}>
+              <View pointerEvents="none">
+                <AppInput
+                  label="Giờ thi đấu"
+                  icon="time-outline"
+                  value={matchDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                  editable={false}
+                />
+              </View>
+            </Pressable>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={matchDate}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              minimumDate={new Date()}
+            />
+          )}
+
+          {showTimePicker && (
+            <DateTimePicker
+              value={matchDate}
+              mode="time"
+              display="default"
+              onChange={handleTimeChange}
+            />
+          )}
 
           <AppInput
             label="Số người cần"

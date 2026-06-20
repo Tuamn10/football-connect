@@ -10,8 +10,12 @@ def create_post(
     post_data: PostCreate,
     user_id: int,
 ) -> Post:
+    post_dict = post_data.model_dump()
+    post_dict["status"] = "open"
+    post_dict["current_players"] = 0
+
     post = Post(
-        **post_data.model_dump(),
+        **post_dict,
         user_id=user_id,
     )
 

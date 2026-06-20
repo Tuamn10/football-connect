@@ -41,13 +41,11 @@ class PostBase(BaseModel):
     field_type: FieldType = "7"
 
     needed_players: int = Field(default=0, ge=0)
-    current_players: int = Field(default=0, ge=0)
 
     required_level: LevelType = "average"
     cost: float | None = Field(default=None, ge=0)
 
     description: str | None = None
-    status: PostStatus = "open"
 
 
 class PostCreate(PostBase):
@@ -65,7 +63,6 @@ class PostUpdate(BaseModel):
     field_type: FieldType | None = None
 
     needed_players: int | None = Field(default=None, ge=0)
-    current_players: int | None = Field(default=None, ge=0)
 
     required_level: LevelType | None = None
     cost: float | None = Field(default=None, ge=0)
@@ -77,5 +74,7 @@ class PostUpdate(BaseModel):
 class PostResponse(PostBase):
     id: int
     user_id: int
+    current_players: int = Field(default=0, ge=0)
+    status: PostStatus = "open"
 
     model_config = ConfigDict(from_attributes=True)

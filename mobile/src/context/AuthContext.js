@@ -71,13 +71,24 @@ export function AuthProvider({ children }) {
     email,
     password,
   }) => {
-    await apiClient.post("/api/v1/auth/register", {
+    const response = await apiClient.post("/api/v1/auth/register", {
       name,
       email,
       password,
     });
 
-    return login(email, password);
+    const accessToken = response.data?.access_token;
+
+    if (!accessToken) {
+      throw new Error("Máy chủ không trả về access token.");
+    }
+
+    await AsyncStorage.setItem("access_token", accessToken);
+
+    const meResponse = await apiClient.get("/api/v1/auth/me");
+    setUser(meResponse.data);
+
+    return meResponse.data;
   };
 
   const logout = async () => {

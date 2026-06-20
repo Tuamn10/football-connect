@@ -36,3 +36,4 @@ class MatchParticipant(Base):
     )
 
     user = relationship("User")
+    post = relationship("Post")

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.match_participant import MatchParticipant
 from app.models.post import Post
+from app.services.notification_service import create_system_notification
 
 
 def get_participant_by_id(
@@ -60,6 +61,9 @@ def cancel_join_match(
 
     participant.status = "cancelled"
 
+    if post.needed_players > 0 and post.current_players < post.needed_players and post.status == "full":
+        post.status = "open"
+
     db.commit()
     db.refresh(participant)
 
@@ -85,6 +89,7 @@ def get_my_participations(
 ):
     return (
         db.query(MatchParticipant)
+        .options(joinedload(MatchParticipant.post))
         .filter(MatchParticipant.user_id == user_id)
         .order_by(MatchParticipant.id.desc())
         .all()
@@ -110,8 +115,31 @@ def update_participant_status(
 
     if post.needed_players > 0 and post.current_players >= post.needed_players:
         post.status = "full"
+    elif post.needed_players > 0 and post.current_players < post.needed_players and post.status == "full":
+        post.status = "open"
 
-    db.commit()
-    db.refresh(participant)
+    try:
+        post_title = post.title if post.title else "không xác định"
+        
+        if new_status == "approved" and old_status != "approved":
+            create_system_notification(
+                db=db,
+                user_id=participant.user_id,
+                title="Yêu cầu tham gia đã được duyệt",
+                content=f'Yêu cầu tham gia kèo "{post_title}" của bạn đã được chủ bài đăng chấp nhận.'
+            )
+        elif new_status == "rejected" and old_status != "rejected":
+            create_system_notification(
+                db=db,
+                user_id=participant.user_id,
+                title="Yêu cầu tham gia bị từ chối",
+                content=f'Yêu cầu tham gia kèo "{post_title}" của bạn đã bị chủ bài đăng từ chối.'
+            )
+
+        db.commit()
+        db.refresh(participant)
+    except Exception as e:
+        db.rollback()
+        raise e
 
     return participant

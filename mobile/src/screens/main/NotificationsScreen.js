@@ -1,163 +1,129 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 
-import {
-  colors,
-  radius,
-  spacing,
-} from "../../theme/theme";
+import apiClient from "../../services/apiClient";
+import { colors, radius, spacing, shadows } from "../../theme/theme";
 
 export default function NotificationsScreen() {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Tải danh sách thông báo từ API
+  const loadNotifications = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    try {
+      const res = await apiClient.get("/api/v1/notifications");
+      setNotifications(res.data);
+    } catch (error) {
+      console.log("Lỗi tải thông báo:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [])
+  );
+
+  // Gọi API đánh dấu đã đọc
+  const markAsRead = async (id) => {
+    try {
+      await apiClient.put(`/api/v1/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (error) {
+      console.log("Lỗi đánh dấu đã đọc:", error);
+    }
+  };
+
+  const renderItem = ({ item }) => (
+    <Pressable 
+      style={[styles.notifCard, item.is_read && styles.readNotif]}
+      onPress={() => !item.is_read && markAsRead(item.id)}
+    >
+      <View style={styles.notifIcon}>
+        <Ionicons 
+          name={item.is_read ? "mail-open-outline" : "mail"} 
+          size={22} 
+          color={item.is_read ? colors.textSecondary : colors.primary} 
+        />
+      </View>
+      <View style={styles.notifContent}>
+        <Text style={[styles.notifTitle, item.is_read && styles.readText]}>{item.title}</Text>
+        <Text style={styles.notifBody}>{item.content}</Text>
+      </View>
+    </Pressable>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.title}>Thông báo</Text>
-
-        <Pressable>
-          <Text style={styles.readAll}>
-            Đánh dấu đã đọc
-          </Text>
-        </Pressable>
       </View>
 
-      <View style={styles.filterRow}>
-        <Pressable style={styles.activeFilter}>
-          <Text style={styles.activeFilterText}>
-            Tất cả
-          </Text>
-        </Pressable>
-
-        <Pressable style={styles.filter}>
-          <Text style={styles.filterText}>
-            Chưa đọc
-          </Text>
-        </Pressable>
-
-        <Pressable style={styles.filter}>
-          <Text style={styles.filterText}>
-            Quan trọng
-          </Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.emptyContainer}>
-        <View style={styles.iconBox}>
-          <Ionicons
-            name="notifications-outline"
-            size={44}
-            color={colors.primary}
-          />
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-
-        <Text style={styles.emptyTitle}>
-          Chưa có thông báo
-        </Text>
-
-        <Text style={styles.emptyDescription}>
-          Các yêu cầu tham gia, kết quả duyệt và lịch
-          trận sẽ xuất hiện tại đây.
-        </Text>
-      </View>
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => loadNotifications(false)} colors={[colors.primary]} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <View style={styles.iconBox}>
+                <Ionicons name="notifications-outline" size={44} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>Chưa có thông báo</Text>
+              <Text style={styles.emptyDescription}>
+                Các yêu cầu tham gia, kết quả duyệt và lịch trận sẽ xuất hiện tại đây.
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  header: { padding: spacing.lg, paddingBottom: 10 },
+  title: { color: colors.text, fontSize: 24, fontWeight: "900" },
+  list: { padding: spacing.lg, paddingBottom: 40 },
+  notifCard: { 
+    flexDirection: "row", backgroundColor: colors.white, padding: 16, 
+    borderRadius: radius.lg, marginBottom: 12, ...shadows.small 
   },
-
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: 10,
-    paddingBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  title: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: "900",
-  },
-
-  readAll: {
-    color: colors.primaryDark,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-
-  filterRow: {
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-  },
-
-  filter: {
-    marginRight: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 9,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-
-  activeFilter: {
-    marginRight: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 9,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
-  },
-
-  filterText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  activeFilterText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 40,
-  },
-
-  iconBox: {
-    width: 88,
-    height: 88,
-    borderRadius: 28,
-    backgroundColor: colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  emptyTitle: {
-    marginTop: 18,
-    color: colors.text,
-    fontSize: 19,
-    fontWeight: "900",
-  },
-
-  emptyDescription: {
-    marginTop: 8,
-    color: colors.textSecondary,
-    lineHeight: 21,
-    textAlign: "center",
-  },
+  readNotif: { backgroundColor: colors.background },
+  notifIcon: { marginRight: 12, marginTop: 2 },
+  notifContent: { flex: 1 },
+  notifTitle: { fontWeight: "800", color: colors.text, marginBottom: 4 },
+  notifBody: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
+  readText: { color: colors.textSecondary, fontWeight: "600" },
+  center: { flex: 1, justifyContent: "center" },
+  emptyContainer: { alignItems: "center", marginTop: 80, paddingHorizontal: 40 },
+  iconBox: { width: 88, height: 88, borderRadius: 28, backgroundColor: colors.primaryLight, alignItems: "center", justifyContent: "center" },
+  emptyTitle: { marginTop: 18, color: colors.text, fontSize: 19, fontWeight: "900" },
+  emptyDescription: { marginTop: 8, color: colors.textSecondary, lineHeight: 21, textAlign: "center" }
 });

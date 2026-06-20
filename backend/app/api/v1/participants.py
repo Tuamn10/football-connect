@@ -61,13 +61,13 @@ def join_post_match(
         user_id=current_user.id,
     )
 
-    if existing_participant and existing_participant.status != "cancelled":
+    if existing_participant and existing_participant.status not in ("cancelled", "rejected"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You have already joined this match",
         )
 
-    if existing_participant and existing_participant.status == "cancelled":
+    if existing_participant and existing_participant.status in ("cancelled", "rejected"):
         existing_participant.status = "pending"
         existing_participant.note = join_data.note
         db.commit()
@@ -181,6 +181,13 @@ def update_join_status(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only post owner or admin can update participant status",
         )
+
+    if status_data.status == "approved" and participant.status != "approved":
+        if post.needed_players > 0 and post.current_players >= post.needed_players:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Match is already full",
+            )
 
     return update_participant_status(
         db=db,

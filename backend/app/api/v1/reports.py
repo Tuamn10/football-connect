@@ -35,6 +35,29 @@ def report_post(
             detail="Post not found",
         )
 
+    if post.user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot report your own post",
+        )
+
+    from app.models.report import Report as ReportModel
+
+    existing_report = (
+        db.query(ReportModel)
+        .filter(
+            ReportModel.user_id == current_user.id,
+            ReportModel.post_id == post_id,
+        )
+        .first()
+    )
+
+    if existing_report:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already reported this post",
+        )
+
     return create_report(
         db=db,
         user_id=current_user.id,

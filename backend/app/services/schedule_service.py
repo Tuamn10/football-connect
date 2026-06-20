@@ -18,7 +18,10 @@ def get_my_schedule(
         .all()
     )
 
+    added_post_ids = set()
+
     for post in my_created_posts:
+        added_post_ids.add(post.id)
         schedule_items.append(
             {
                 "post_id": post.id,
@@ -40,11 +43,15 @@ def get_my_schedule(
         db.query(MatchParticipant, Post)
         .join(Post, MatchParticipant.post_id == Post.id)
         .filter(MatchParticipant.user_id == user_id)
+        .filter(MatchParticipant.status.in_(["pending", "approved"]))
         .order_by(Post.match_time.asc())
         .all()
     )
 
     for participant, post in my_participations:
+        if post.id in added_post_ids:
+            continue
+            
         schedule_items.append(
             {
                 "post_id": post.id,

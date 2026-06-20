@@ -1,6 +1,8 @@
 from typing import Literal, Optional
-
 from pydantic import BaseModel, ConfigDict
+
+# 🔴 1. IMPORT THÊM KHUÔN CỦA POST
+from app.schemas.post import PostResponse 
 
 
 ParticipantStatus = Literal[
@@ -10,22 +12,17 @@ ParticipantStatus = Literal[
     "cancelled",
 ]
 
-
 class JoinMatchRequest(BaseModel):
     note: str | None = None
-
 
 class UpdateParticipantStatus(BaseModel):
     status: Literal["approved", "rejected"]
 
-
-# THÊM KHUÔN NÀY ĐỂ HỨNG THÔNG TIN NGƯỜI DÙNG
 class ParticipantUser(BaseModel):
     id: int
     name: str
 
     model_config = ConfigDict(from_attributes=True)
-
 
 class MatchParticipantResponse(BaseModel):
     id: int
@@ -34,7 +31,9 @@ class MatchParticipantResponse(BaseModel):
     note: str | None = None
     status: str
     
-    # NHÉT THÊM TRƯỜNG "user" VÀO ĐÂY ĐỂ TRẢ VỀ FRONTEND
     user: ParticipantUser | None = None
+    
+    # 🔴 2. THÊM DÒNG NÀY ĐỂ PYDANTIC CHO PHÉP XUẤT DATA BÀI ĐĂNG
+    post: Optional[PostResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
