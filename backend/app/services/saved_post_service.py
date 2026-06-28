@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.saved_post import SavedPost
 
@@ -50,6 +50,7 @@ def get_my_saved_posts(
     return (
         db.query(SavedPost)
         .filter(SavedPost.user_id == user_id)
+        .options(joinedload(SavedPost.post))
         .order_by(SavedPost.id.desc())
         .all()
     )

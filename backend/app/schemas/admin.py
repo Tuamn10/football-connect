@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -19,6 +20,7 @@ class AdminOverviewResponse(BaseModel):
     pending_reports: int
     open_posts: int
     active_fields: int
+    total_reviews: int
 
 
 class AdminUpdateUserStatus(BaseModel):
@@ -52,5 +54,20 @@ class AdminUserResponse(BaseModel):
     position: str | None = None
     level: str
     status: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminFieldReviewResponse(BaseModel):
+    id: int
+    field_id: int
+    user_id: int
+    rating: int
+    comment: str | None = None
+    created_at: datetime
+    
+    # Nested info
+    user_name: str | None = None
+    field_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

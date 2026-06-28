@@ -1,4 +1,5 @@
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
@@ -32,6 +33,7 @@ class Post(Base):
 
     needed_players = Column(Integer, nullable=False, default=0)
     current_players = Column(Integer, nullable=False, default=0)
+    contact_phone = Column(String(20), nullable=True)
 
     required_level = Column(String(50), nullable=False, default="average")
     cost = Column(Float, nullable=True)
@@ -45,3 +47,13 @@ class Post(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+    user = relationship("User", lazy="joined")
+
+    @property
+    def owner_name(self) -> str | None:
+        return self.user.name if self.user else None
+
+    @property
+    def owner_avatar(self) -> str | None:
+        return self.user.avatar if self.user else None

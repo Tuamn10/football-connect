@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.post import Post
 from app.schemas.post import PostCreate, PostUpdate
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def create_post(
@@ -77,6 +77,8 @@ def get_feed_posts(
 
     if status:
         query = query.filter(Post.status == status)
+        if status == "open":
+            query = query.filter(Post.match_time > datetime.now(timezone.utc))
 
     if keyword:
         search_keyword = f"%{keyword}%"

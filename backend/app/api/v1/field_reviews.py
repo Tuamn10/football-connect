@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
@@ -55,12 +56,19 @@ def create_review(
             detail="You have already reviewed this field",
         )
 
-    return create_field_review(
-        db=db,
-        user_id=current_user.id,
-        field_id=field_id,
-        review_data=review_data,
-    )
+    try:
+        return create_field_review(
+            db=db,
+            user_id=current_user.id,
+            field_id=field_id,
+            review_data=review_data,
+        )
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You have already reviewed this field",
+        )
 
 
 @router.get(

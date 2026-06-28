@@ -31,6 +31,8 @@ import AppLoadingScreen from "../screens/AppLoadingScreen";
 
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";
 
 import FeedScreen from "../screens/main/FeedScreen";
 import NotificationsScreen from "../screens/main/NotificationsScreen";
@@ -41,7 +43,14 @@ import CreatePostScreen from "../screens/posts/CreatePostScreen";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 
 import FieldMapScreen from "../screens/FieldMapScreen";
+import AssistantScreen from "../screens/assistant/AssistantScreen";
+import FieldDetailScreen from "../screens/fields/FieldDetailScreen";
+import MyFieldsScreen from "../screens/fields/MyFieldsScreen";
+import FieldFormScreen from "../screens/fields/FieldFormScreen";
 import PostDetailScreen from "../screens/posts/PostDetailScreen";
+import SavedPostsScreen from "../screens/posts/SavedPostsScreen";
+import EditProfileScreen from "../screens/profile/EditProfileScreen";
+import EditPostScreen from "../screens/posts/EditPostScreen";
 
 const AuthStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
@@ -68,6 +77,22 @@ function AuthNavigator() {
           headerStyle: {
             backgroundColor: colors.background,
           },
+        }}
+      />
+
+      <AuthStack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <AuthStack.Screen
+        name="ResetPassword"
+        component={ResetPasswordScreen}
+        options={{
+          headerShown: false,
         }}
       />
     </AuthStack.Navigator>
@@ -149,6 +174,10 @@ function MainTabs() {
               ? "calendar"
               : "calendar-outline",
 
+            Assistant: focused
+              ? "chatbubbles"
+              : "chatbubbles-outline",
+
             Notifications: focused
               ? "notifications"
               : "notifications-outline",
@@ -201,6 +230,14 @@ function MainTabs() {
       />
 
       <Tab.Screen
+        name="Assistant"
+        component={AssistantScreen}
+        options={{
+          tabBarLabel: "Trợ lý",
+        }}
+      />
+
+      <Tab.Screen
         name="Notifications"
         component={NotificationsScreen}
         options={{
@@ -245,6 +282,66 @@ function MainNavigator() {
         component={FieldMapScreen}
         options={{
           title: "Sân bóng quanh bạn",
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+        }}
+      />
+
+      <RootStack.Screen
+        name="FieldDetail"
+        component={FieldDetailScreen}
+        options={{
+          title: "Chi tiết sân bóng",
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+        }}
+      />
+
+      <RootStack.Screen
+        name="MyFields"
+        component={MyFieldsScreen}
+        options={{
+          title: "Quản lý sân bóng",
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+        }}
+      />
+
+      <RootStack.Screen
+        name="FieldForm"
+        component={FieldFormScreen}
+        options={{
+          title: "Cập nhật sân bóng",
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+        }}
+      />
+
+      <RootStack.Screen
+        name="SavedPosts"
+        component={SavedPostsScreen}
+        options={{
+          title: "Bài đã lưu",
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+        }}
+      />
+
+      <RootStack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{
+          title: "Chỉnh sửa hồ sơ",
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+        }}
+      />
+
+      <RootStack.Screen
+        name="EditPost"
+        component={EditPostScreen}
+        options={{
+          title: "Chỉnh sửa bài đăng",
           headerShadowVisible: false,
           headerTintColor: colors.text,
         }}

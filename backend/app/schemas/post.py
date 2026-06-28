@@ -5,12 +5,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 PostType = Literal[
-    "find_opponent",
     "find_player",
-    "find_goalkeeper",
+    "find_opponent",
     "pass_field",
     "find_field",
-    "recruit_member",
 ]
 
 FieldType = Literal["5", "7", "11"]
@@ -38,13 +36,14 @@ class PostBase(BaseModel):
     match_time: datetime
 
     area: str | None = None
-    field_type: FieldType = "7"
+    field_type: str
 
     needed_players: int = Field(default=0, ge=0)
 
     required_level: LevelType = "average"
     cost: float | None = Field(default=None, ge=0)
 
+    contact_phone: str | None = None
     description: str | None = None
 
 
@@ -60,13 +59,14 @@ class PostUpdate(BaseModel):
     match_time: datetime | None = None
 
     area: str | None = None
-    field_type: FieldType | None = None
+    field_type: str | None = None
 
     needed_players: int | None = Field(default=None, ge=0)
 
     required_level: LevelType | None = None
     cost: float | None = Field(default=None, ge=0)
 
+    contact_phone: str | None = None
     description: str | None = None
     status: PostStatus | None = None
 
@@ -76,5 +76,7 @@ class PostResponse(PostBase):
     user_id: int
     current_players: int = Field(default=0, ge=0)
     status: PostStatus = "open"
+    owner_name: str | None = None
+    owner_avatar: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

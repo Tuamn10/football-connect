@@ -15,6 +15,7 @@ from app.services.field_service import (
     delete_field,
     get_field_by_id,
     get_fields,
+    get_fields_by_owner,
     update_field,
 )
 
@@ -28,6 +29,16 @@ def list_fields(
     db: Session = Depends(get_db),
 ):
     return get_fields(db=db, skip=skip, limit=limit)
+
+
+@router.get("/my", response_model=list[FootballFieldResponse])
+def list_my_fields(
+    skip: int = 0,
+    limit: int = Query(default=100, le=100),
+    current_user: User = Depends(get_current_field_owner_or_admin),
+    db: Session = Depends(get_db),
+):
+    return get_fields_by_owner(db=db, owner_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/{field_id}", response_model=FootballFieldResponse)

@@ -11,10 +11,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
 
 import apiClient from "../../services/apiClient";
 import { colors, radius, shadows, spacing } from "../../theme/theme";
-import { formatDateTime, formatPostStatus } from "../../utils/formatters";
+import { formatDateTime, formatPostDisplayStatus } from "../../utils/formatters";
 
 // Hàm hỗ trợ chuẩn hóa dữ liệu mảng
 function normalizeList(data) {
@@ -26,11 +27,11 @@ function normalizeList(data) {
 
 export default function MyPostsScreen() {
   const navigation = useNavigation();
-  
+
   const [activeTab, setActiveTab] = useState("published");
   const [myPosts, setMyPosts] = useState([]);
   const [myParticipations, setMyParticipations] = useState([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -76,12 +77,12 @@ export default function MyPostsScreen() {
   const renderMatchCard = ({ item }) => {
     const isParticipation = activeTab !== "published";
     const postData = isParticipation ? item.post : item;
-    
+
     // Phòng hờ data lỗi hoặc đang tải
     if (!postData) return null;
 
     return (
-      <Pressable 
+      <Pressable
         style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
         onPress={() => navigation.navigate("PostDetail", { postId: postData.id })}
       >
@@ -92,14 +93,21 @@ export default function MyPostsScreen() {
               {postData.post_type === "find_player" ? "Tìm người" : "Tìm đối thủ"}
             </Text>
           </View>
-          
+
           {isParticipation ? (
             <Text style={[styles.cardStatus, item.status === "approved" ? styles.textSuccess : styles.textWarning]}>
               {item.status === "approved" ? "Đã duyệt vào sân" : "Đang chờ duyệt"}
             </Text>
           ) : (
-            <Text style={[styles.cardStatus, postData.status === "open" ? styles.textSuccess : styles.textSecondary]}>
-              {formatPostStatus(postData.status)}
+            <Text style={[
+              styles.cardStatus,
+              formatPostDisplayStatus(postData) === "Đang mở"
+                ? styles.textSuccess
+                : formatPostDisplayStatus(postData) === "Đã hủy"
+                  ? styles.textWarning
+                  : styles.textSecondary
+            ]}>
+              {formatPostDisplayStatus(postData)}
             </Text>
           )}
         </View>
@@ -134,15 +142,13 @@ export default function MyPostsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.title}>Kèo của tôi</Text>
-        <Pressable style={styles.filterButton}>
-          <Ionicons name="options-outline" size={22} color={colors.primaryDark} />
-        </Pressable>
       </View>
 
       <View style={styles.tabs}>
-        <Pressable 
+        <Pressable
           style={activeTab === "published" ? styles.activeTab : styles.tab}
           onPress={() => setActiveTab("published")}
         >
@@ -151,7 +157,7 @@ export default function MyPostsScreen() {
           </Text>
         </Pressable>
 
-        <Pressable 
+        <Pressable
           style={activeTab === "joined" ? styles.activeTab : styles.tab}
           onPress={() => setActiveTab("joined")}
         >
@@ -160,7 +166,7 @@ export default function MyPostsScreen() {
           </Text>
         </Pressable>
 
-        <Pressable 
+        <Pressable
           style={activeTab === "pending" ? styles.activeTab : styles.tab}
           onPress={() => setActiveTab("pending")}
         >
@@ -217,14 +223,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "900",
   },
-  filterButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   tabs: {
     marginHorizontal: spacing.lg,
     padding: 4,
@@ -258,11 +256,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
   },
-  
+
   // KHU VỰC DANH SÁCH & THẺ (CARD)
   listContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 30,
+    paddingBottom: 140,
     paddingTop: 8,
   },
   card: {
@@ -329,7 +327,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     flex: 1,
   },
-  
+
   centerContainer: {
     flex: 1,
     alignItems: "center",

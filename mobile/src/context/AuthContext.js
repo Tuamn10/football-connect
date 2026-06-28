@@ -69,11 +69,13 @@ export function AuthProvider({ children }) {
   const register = async ({
     name,
     email,
+    phone,
     password,
   }) => {
     const response = await apiClient.post("/api/v1/auth/register", {
       name,
       email,
+      phone,
       password,
     });
 

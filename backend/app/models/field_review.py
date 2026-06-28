@@ -1,10 +1,12 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, func, UniqueConstraint
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
 
 class FieldReview(Base):
     __tablename__ = "field_reviews"
+    __table_args__ = (UniqueConstraint("user_id", "field_id", name="uq_field_reviews_user_field"),)
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -31,3 +33,6 @@ class FieldReview(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+    user = relationship("User", lazy="joined")
+    field = relationship("FootballField", lazy="joined")

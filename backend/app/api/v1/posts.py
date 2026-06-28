@@ -1,12 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
+import re
 
 from app.api.deps import get_current_user
 from app.core.roles import ROLE_ADMIN
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.post import PostCreate, PostResponse, PostUpdate
+
+VALID_POST_TYPES = {"find_player", "find_opponent", "pass_field", "find_field"}
+
 from app.services.field_service import get_field_by_id
 from app.services.post_service import (
     create_post,
@@ -56,6 +60,37 @@ def create_new_post(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if post_data.post_type not in VALID_POST_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Loại bài đăng không hợp lệ.",
+        )
+
+    if post_data.match_time <= datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Thời gian thi đấu phải lớn hơn thời gian hiện tại",
+        )
+
+    if not post_data.field_type or str(post_data.field_type).strip() not in ("5", "7", "11"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Loại sân không hợp lệ.",
+        )
+
+    if not post_data.contact_phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Số điện thoại liên hệ không hợp lệ. Vui lòng nhập 10 chữ số bắt đầu bằng 0.",
+        )
+    phone = post_data.contact_phone.strip()
+    if not re.match(r"^0\d{9}$", phone):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Số điện thoại liên hệ không hợp lệ. Vui lòng nhập 10 chữ số bắt đầu bằng 0.",
+        )
+    post_data.contact_phone = phone
+
     if post_data.field_id is not None:
         field = get_field_by_id(db=db, field_id=post_data.field_id)
 
@@ -64,6 +99,12 @@ def create_new_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Football field not found",
             )
+
+    if post_data.post_type == "find_opponent":
+        post_data.needed_players = 1
+    elif post_data.post_type in ("pass_field", "find_field"):
+        post_data.needed_players = 0
+        post_data.required_level = "average"
 
     return create_post(
         db=db,
@@ -115,6 +156,36 @@ def update_existing_post(
             detail="You can only update your own post",
         )
 
+    if post_data.post_type is not None and post_data.post_type not in VALID_POST_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Loại bài đăng không hợp lệ.",
+        )
+
+    if post_data.match_time and post_data.match_time <= datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Thời gian thi đấu phải lớn hơn thời gian hiện tại",
+        )
+
+    if post_data.field_type is not None and str(post_data.field_type).strip() not in ("5", "7", "11"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Loại sân không hợp lệ.",
+        )
+
+    if not post_data.contact_phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Số điện thoại liên hệ không hợp lệ. Vui lòng nhập 10 chữ số bắt đầu bằng 0.",
+        )
+    phone = post_data.contact_phone.strip()
+    if not re.match(r"^0\d{9}$", phone):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Số điện thoại liên hệ không hợp lệ. Vui lòng nhập 10 chữ số bắt đầu bằng 0.",
+        )
+    post_data.contact_phone = phone
     if post_data.field_id is not None:
         field = get_field_by_id(db=db, field_id=post_data.field_id)
 
@@ -123,6 +194,12 @@ def update_existing_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Football field not found",
             )
+
+    if post_data.post_type == "find_opponent":
+        post_data.needed_players = 1
+    elif post_data.post_type in ("pass_field", "find_field"):
+        post_data.needed_players = 0
+        post_data.required_level = "average"
 
     return update_post(
         db=db,

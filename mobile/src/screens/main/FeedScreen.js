@@ -20,8 +20,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 import PostCard from "../../components/PostCard";
+import RecommendedPostsSection from "../../components/RecommendedPostsSection";
 import EmptyState from "../../components/EmptyState";
 import apiClient from "../../services/apiClient";
 import { useAuth } from "../../context/AuthContext";
@@ -50,6 +52,10 @@ const POST_FILTERS = [
   {
     key: "pass_field",
     label: "Pass sân",
+  },
+  {
+    key: "find_field",
+    label: "Tìm sân",
   },
 ];
 
@@ -144,15 +150,21 @@ export default function FeedScreen({
     });
   };
 
-  const handleChangeFilter = async (
-    filterKey
-  ) => {
+  const handleChangeFilter = async (filterKey) => {
+    if (activeFilter === filterKey) return;
+    
     setActiveFilter(filterKey);
+    setPosts([]);
+    setRefreshing(true);
 
-    await fetchPosts({
-      keywordValue: keyword,
-      filterValue: filterKey,
-    });
+    try {
+      await fetchPosts({
+        keywordValue: keyword,
+        filterValue: filterKey,
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleRefresh = useCallback(
@@ -175,9 +187,20 @@ export default function FeedScreen({
     loadData();
   }, []);
 
+  const getSectionTitle = () => {
+    switch (activeFilter) {
+      case "find_player": return "Kèo Tìm người mới nhất";
+      case "find_opponent": return "Kèo Tìm đối thủ mới nhất";
+      case "pass_field": return "Bài Pass sân mới nhất";
+      case "find_field": return "Bài Tìm sân mới nhất";
+      default: return "Kèo bóng mới nhất";
+    }
+  };
+
   const renderHeader = () => {
     return (
       <>
+        <StatusBar style="light" />
         <LinearGradient
           colors={[
             colors.primaryDark,
@@ -279,17 +302,6 @@ export default function FeedScreen({
                 />
               </Pressable>
             ) : null}
-            <Pressable
-                onPress={handleSearch}
-                hitSlop={10}
-                style={styles.searchActionButton}
-              >
-                <Ionicons
-                  name="search"
-                  size={21}
-                  color={colors.textLight}
-                />
-              </Pressable>
           </View>
         </LinearGradient>
 
@@ -315,14 +327,14 @@ export default function FeedScreen({
                 style={[
                   styles.filterChip,
                   isActive &&
-                    styles.filterChipActive,
+                  styles.filterChipActive,
                 ]}
               >
                 <Text
                   style={[
                     styles.filterText,
                     isActive &&
-                      styles.filterTextActive,
+                    styles.filterTextActive,
                   ]}
                 >
                   {filter.label}
@@ -374,10 +386,14 @@ export default function FeedScreen({
           />
         </View>
 
+        {activeFilter === "" && (
+          <RecommendedPostsSection navigation={navigation} />
+        )}
+
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleBlock}>
             <Text style={styles.sectionTitle}>
-              Kèo bóng mới nhất
+              {getSectionTitle()}
             </Text>
 
             <Text
@@ -482,9 +498,9 @@ export default function FeedScreen({
                 errorMessage
                   ? handleSearch
                   : () =>
-                      navigation.navigate(
-                        "CreatePost"
-                      )
+                    navigation.navigate(
+                      "CreatePost"
+                    )
               }
             />
           }

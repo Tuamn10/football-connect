@@ -13,6 +13,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import AppInput from "../../components/AppInput";
 import PrimaryButton from "../../components/PrimaryButton";
+import { useAuth } from "../../context/AuthContext";
 
 import apiClient from "../../services/apiClient";
 import { getApiErrorMessage } from "../../utils/apiError";
@@ -54,25 +55,35 @@ const REQUIRED_LEVELS = [
   { key: "advanced", label: "Nâng cao" },
 ];
 
+const FIELD_TYPES = [
+  { key: "5", label: "Sân 5" },
+  { key: "7", label: "Sân 7" },
+  { key: "11", label: "Sân 11" },
+];
+
 export default function CreatePostScreen({ navigation }) {
-  const [postType, setPostType] = useState("find_player");
+  const { user } = useAuth();
+  const [postType, setPostType] = useState("find_opponent");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [area, setArea] = useState("");
+  
+  const [matchDate, setMatchDate] = useState(new Date(Date.now() + 86400000)); 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  
+  const [fieldType, setFieldType] = useState("");
   const [neededPlayers, setNeededPlayers] = useState("");
   const [requiredLevel, setRequiredLevel] = useState("average");
   const [cost, setCost] = useState("");
+  const [contactPhone, setContactPhone] = useState(user?.phone || "");
   
   const [loading, setLoading] = useState(false);
 
-  const [matchDate, setMatchDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
-    d.setHours(18, 0, 0, 0);
-    return d;
-  });
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const handlePhoneChange = (value) => {
+    const normalizedPhone = value.replace(/\D/g, "").slice(0, 10);
+    setContactPhone(normalizedPhone);
+  };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
@@ -93,8 +104,24 @@ export default function CreatePostScreen({ navigation }) {
   };
 
   const handleCreatePost = async () => {
-    if (!title.trim() || !area.trim() || !neededPlayers.trim()) {
-      Alert.alert("Thiếu thông tin", "Vui lòng nhập đủ Tiêu đề, Khu vực và Số người cần.");
+    const isFieldPost = postType === "pass_field" || postType === "find_field";
+
+    if (!title.trim() || !area.trim()) {
+      Alert.alert("Thiếu thông tin", "Vui lòng nhập đủ các thông tin bắt buộc.");
+      return;
+    }
+
+    if (!fieldType) {
+      Alert.alert("Thiếu thông tin", "Vui lòng chọn loại sân.");
+      return;
+    }
+
+    if (!contactPhone.trim()) {
+      Alert.alert("Thiếu thông tin", "Vui lòng nhập số điện thoại liên hệ.");
+      return;
+    }
+    if (!/^0\d{9}$/.test(contactPhone.trim())) {
+      Alert.alert("Số điện thoại không hợp lệ", "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.");
       return;
     }
 
@@ -113,11 +140,12 @@ export default function CreatePostScreen({ navigation }) {
         post_type: postType,
         area: area.trim(),
         match_time: matchDate.toISOString(),
-        needed_players: parseInt(neededPlayers) || 1,
+        needed_players: postType === "find_opponent" ? 1 : (isFieldPost ? 0 : (parseInt(neededPlayers) || 1)),
         current_players: 0,
-        field_type: "5",
-        required_level: requiredLevel, 
-        cost: parseInt(cost) || 0 // Ép kiểu số nguyên cho tiền, bỏ trống thì mặc định là 0
+        field_type: fieldType,
+        required_level: isFieldPost ? "average" : requiredLevel, 
+        cost: parseInt(cost) || 0, // Ép kiểu số nguyên cho tiền, bỏ trống thì mặc định là 0
+        contact_phone: contactPhone.trim()
       };
 
       const response = await apiClient.post("/api/v1/posts", postData);
@@ -261,33 +289,15 @@ export default function CreatePostScreen({ navigation }) {
             />
           )}
 
-          <AppInput
-            label="Số người cần"
-            icon="people-outline"
-            placeholder="Nhập số người"
-            keyboardType="number-pad"
-            value={neededPlayers}
-            onChangeText={setNeededPlayers}
-          />
-
-          <AppInput
-            label="Chi phí dự kiến (VNĐ/người)"
-            icon="wallet-outline"
-            placeholder="Ví dụ: 50000 (Bỏ trống nếu miễn phí)"
-            keyboardType="number-pad"
-            value={cost}
-            onChangeText={setCost}
-          />
-
-          {/* KHU VỰC CHỌN TRÌNH ĐỘ */}
-          <Text style={styles.levelLabel}>Trình độ yêu cầu</Text>
+          {/* KHU VỰC CHỌN LOẠI SÂN */}
+          <Text style={styles.levelLabel}>Loại sân</Text>
           <View style={styles.levelGrid}>
-            {REQUIRED_LEVELS.map((level) => {
-              const isActive = requiredLevel === level.key;
+            {FIELD_TYPES.map((type) => {
+              const isActive = fieldType === type.key;
               return (
                 <Pressable
-                  key={level.key}
-                  onPress={() => setRequiredLevel(level.key)}
+                  key={type.key}
+                  onPress={() => setFieldType(type.key)}
                   style={[
                     styles.levelChip,
                     isActive && styles.levelChipActive,
@@ -299,12 +309,74 @@ export default function CreatePostScreen({ navigation }) {
                       isActive && styles.levelChipTextActive,
                     ]}
                   >
-                    {level.label}
+                    {type.label}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
+
+          {!(postType === "pass_field" || postType === "find_field") && (
+            <AppInput
+              label="Số người cần"
+              icon="people-outline"
+              placeholder={postType === "find_opponent" ? "1 (Cố định)" : "Nhập số người"}
+              keyboardType="number-pad"
+              value={postType === "find_opponent" ? "1" : neededPlayers}
+              onChangeText={setNeededPlayers}
+              editable={postType !== "find_opponent"}
+            />
+          )}
+
+          <AppInput
+            label="Số điện thoại liên hệ"
+            icon="call-outline"
+            placeholder="Nhập 10 số (Bắt đầu bằng 0)"
+            keyboardType="phone-pad"
+            maxLength={10}
+            value={contactPhone}
+            onChangeText={handlePhoneChange}
+          />
+
+          <AppInput
+            label="Chi phí dự kiến (VNĐ/người)"
+            icon="wallet-outline"
+            placeholder="Ví dụ: 50000 (Bỏ trống nếu miễn phí)"
+            keyboardType="number-pad"
+            value={cost}
+            onChangeText={setCost}
+          />
+
+          {!(postType === "pass_field" || postType === "find_field") && (
+            <>
+              {/* KHU VỰC CHỌN TRÌNH ĐỘ */}
+              <Text style={styles.levelLabel}>Trình độ yêu cầu</Text>
+              <View style={styles.levelGrid}>
+                {REQUIRED_LEVELS.map((level) => {
+                  const isActive = requiredLevel === level.key;
+                  return (
+                    <Pressable
+                      key={level.key}
+                      onPress={() => setRequiredLevel(level.key)}
+                      style={[
+                        styles.levelChip,
+                        isActive && styles.levelChipActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.levelChipText,
+                          isActive && styles.levelChipTextActive,
+                        ]}
+                      >
+                        {level.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
 
           <PrimaryButton
             title="Đăng bài"

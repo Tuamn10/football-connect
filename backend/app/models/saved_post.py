@@ -1,4 +1,5 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint, func
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
@@ -26,3 +27,5 @@ class SavedPost(Base):
     )
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    post = relationship("Post")

@@ -27,6 +27,7 @@ export default function RegisterScreen() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] =
     useState("");
   const [confirmPassword, setConfirmPassword] =
@@ -46,6 +47,14 @@ export default function RegisterScreen() {
       Alert.alert(
         "Email chưa hợp lệ",
         "Vui lòng nhập đúng địa chỉ email."
+      );
+      return;
+    }
+
+    if (!phone.trim() || !/^0\d{9}$/.test(phone.trim())) {
+      Alert.alert(
+        "Số điện thoại chưa hợp lệ",
+        "Vui lòng nhập đúng 10 chữ số bắt đầu bằng số 0."
       );
       return;
     }
@@ -72,6 +81,7 @@ export default function RegisterScreen() {
       await register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
+        phone: phone.trim(),
         password,
       });
     } catch (error) {
@@ -137,6 +147,16 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
+            />
+
+            <AppInput
+              label="Số điện thoại"
+              icon="call-outline"
+              placeholder="Nhập số điện thoại"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              maxLength={10}
             />
 
             <AppInput

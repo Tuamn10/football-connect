@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_current_user
 from app.core.roles import ROLE_ADMIN
@@ -74,12 +75,19 @@ def join_post_match(
         db.refresh(existing_participant)
         return existing_participant
 
-    return join_match(
-        db=db,
-        post_id=post_id,
-        user_id=current_user.id,
-        note=join_data.note,
-    )
+    try:
+        return join_match(
+            db=db,
+            post_id=post_id,
+            user_id=current_user.id,
+            note=join_data.note,
+        )
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You have already joined this match",
+        )
 
 
 @router.delete(

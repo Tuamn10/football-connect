@@ -6,3 +6,4 @@ from app.models.saved_post import SavedPost
 from app.models.report import Report
 from app.models.field_review import FieldReview
 from app.models.notification import Notification
+from app.models.password_reset_otp import PasswordResetOTP

@@ -1,3 +1,53 @@
 # Local mobile backups
 mobile/src_backup/
 mobile/App.backup.js
+
+# Environments
+.env
+.venv
+venv/
+env/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Expo / React Native
+.expo/
+dist/
+build/
+coverage/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# AI assistant working files
+.gemini/
+.antigravity/
+.claude/
+brain/
+scratch/
+artifacts/
+tmp/
+temp/
+
+# Internal reports and notes
+task.md
+walkthrough.md
+implementation_plan.md
+implementation-plan.md
+*_AUDIT.md
+*_VERIFICATION.md
+*_WALKTHROUGH.md
+*_CHECKLIST.md

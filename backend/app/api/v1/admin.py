@@ -7,6 +7,7 @@ from app.models.football_field import FootballField
 from app.models.post import Post
 from app.models.report import Report
 from app.models.user import User
+from app.models.field_review import FieldReview
 from app.schemas.admin import (
     AdminOverviewResponse,
     AdminUpdateFieldStatus,
@@ -15,6 +16,7 @@ from app.schemas.admin import (
     AdminUpdateUserRole,
     AdminUpdateUserStatus,
     AdminUserResponse,
+    AdminFieldReviewResponse,
 )
 from app.schemas.football_field import FootballFieldResponse
 from app.schemas.post import PostResponse
@@ -32,6 +34,7 @@ def admin_overview(
     total_fields = db.query(FootballField).count()
     total_posts = db.query(Post).count()
     total_reports = db.query(Report).count()
+    total_reviews = db.query(FieldReview).count()
 
     pending_reports = db.query(Report).filter(Report.status == "pending").count()
     open_posts = db.query(Post).filter(Post.status == "open").count()
@@ -45,6 +48,7 @@ def admin_overview(
         "pending_reports": pending_reports,
         "open_posts": open_posts,
         "active_fields": active_fields,
+        "total_reviews": total_reviews,
     }
 
 
@@ -363,3 +367,57 @@ def admin_update_report_status(
     db.refresh(report)
 
     return report
+
+
+# =========================
+# ADMIN - FIELD REVIEWS
+# =========================
+
+@router.get("/field-reviews", response_model=list[AdminFieldReviewResponse])
+def admin_list_field_reviews(
+    skip: int = 0,
+    limit: int = 20,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    reviews = (
+        db.query(FieldReview)
+        .order_by(FieldReview.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    # Map additional fields
+    response = []
+    for r in reviews:
+        response.append({
+            "id": r.id,
+            "field_id": r.field_id,
+            "user_id": r.user_id,
+            "rating": r.rating,
+            "comment": r.comment,
+            "created_at": r.created_at,
+            "user_name": r.user.name if r.user else None,
+            "field_name": r.field.name if r.field else None,
+        })
+        
+    return response
+
+
+@router.delete("/field-reviews/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_field_review(
+    review_id: int,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    review = db.query(FieldReview).filter(FieldReview.id == review_id).first()
+    if not review:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Field review not found",
+        )
+
+    db.delete(review)
+    db.commit()
+    return None

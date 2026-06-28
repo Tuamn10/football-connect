@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -6,6 +6,7 @@ from app.db.base import Base
 
 class MatchParticipant(Base):
     __tablename__ = "match_participants"
+    __table_args__ = (UniqueConstraint("user_id", "post_id", name="uq_match_participants_user_post"),)
 
     id = Column(Integer, primary_key=True, index=True)
 

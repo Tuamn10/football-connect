@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Linking,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +22,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import PrimaryButton from "../../components/PrimaryButton";
+import ReportPostModal from "../../components/ReportPostModal";
 import apiClient from "../../services/apiClient";
 import { useAuth } from "../../context/AuthContext";
 import { getApiErrorMessage } from "../../utils/apiError";
@@ -32,6 +34,7 @@ import {
   formatLevel,
   formatPostStatus,
   formatPostType,
+  formatParticipantStatus,
 } from "../../utils/formatters";
 
 import {
@@ -96,7 +99,7 @@ async function loadSavedStatus(postId) {
   }
 }
 
-export default function PostDetailScreen({ route }) {
+export default function PostDetailScreen({ route, navigation }) {
   const postId = route?.params?.postId;
   const { user } = useAuth();
 
@@ -108,6 +111,7 @@ export default function PostDetailScreen({ route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [reportModalVisible, setReportModalVisible] = useState(false);
 
   const loadData = useCallback(async ({ showPageLoading = true } = {}) => {
     if (!postId) {
@@ -263,6 +267,24 @@ export default function PostDetailScreen({ route }) {
     }
   };
 
+  const executeDeletePost = async () => {
+    try {
+      setActionLoading("delete");
+      await apiClient.delete(`/api/v1/posts/${postId}`);
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert("Không thể xóa", getApiErrorMessage(error, "Có lỗi xảy ra khi xóa bài đăng."));
+      setActionLoading("");
+    }
+  };
+
+  const handleDeletePost = () => {
+    Alert.alert("Xóa bài đăng?", "Bài đăng này sẽ bị xóa vĩnh viễn và không còn hiển thị.", [
+      { text: "Hủy", style: "cancel" },
+      { text: "Xóa", style: "destructive", onPress: executeDeletePost },
+    ]);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -296,7 +318,8 @@ export default function PostDetailScreen({ route }) {
   const matchTime = post?.match_time || post?.match_at || post?.start_time;
   const currentPlayers = Number(post?.current_players) || 0;
   const neededPlayers = Number(post?.needed_players) || 0;
-  const joinablePostTypes = ["find_player", "find_goalkeeper"];
+  const joinablePostTypes = ["find_player", "find_opponent"];
+  const isFieldPost = post?.post_type === "pass_field" || post?.post_type === "find_field";
   const supportsJoining = joinablePostTypes.includes(post?.post_type);
 
   const canJoin = supportsJoining && post?.status === "open" && !isOwner && (!participationStatus || participationStatus === "cancelled" || participationStatus === "rejected");
@@ -349,9 +372,24 @@ export default function PostDetailScreen({ route }) {
             <Text style={styles.sectionTitle}>Thông tin trận đấu</Text>
             <DetailRow icon="location-outline" label="Khu vực" value={post.area || post.location || "Chưa cập nhật"} />
             <DetailRow icon="time-outline" label="Thời gian" value={formatDateTime(matchTime)} />
-            <DetailRow icon="people-outline" label="Số người" value={`${currentPlayers}/${neededPlayers} người`} />
+            {!isFieldPost && (
+              <>
+                <DetailRow icon="people-outline" label="Số người" value={`${currentPlayers}/${neededPlayers} người`} />
+                <DetailRow icon="shield-outline" label="Trình độ" value={formatLevel(post.required_level)} />
+              </>
+            )}
             <DetailRow icon="football-outline" label="Loại sân" value={formatFieldType(post.field_type)} />
-            <DetailRow icon="shield-outline" label="Trình độ" value={formatLevel(post.required_level)} />
+            {post.contact_phone && (
+              <Pressable onPress={() => Linking.openURL(`tel:${post.contact_phone}`)}>
+                <View style={[styles.detailRow, { backgroundColor: colors.surfaceSoft, borderRadius: radius.md, padding: 8, marginTop: 4 }]}>
+                  <View style={styles.detailIcon}><Ionicons name="call-outline" size={20} color={colors.primary} /></View>
+                  <View style={styles.detailContent}>
+                    <Text style={styles.detailLabel}>Liên hệ (Bấm để gọi)</Text>
+                    <Text style={[styles.detailValue, { color: colors.primaryDark }]}>{post.contact_phone}</Text>
+                  </View>
+                </View>
+              </Pressable>
+            )}
             <DetailRow icon="wallet-outline" label="Chi phí" value={formatCurrency(post.cost)} last />
           </View>
 
@@ -389,7 +427,7 @@ export default function PostDetailScreen({ route }) {
                         <View style={{ marginLeft: 12, flex: 1 }}>
                           <Text style={styles.participantName}>{displayName}</Text>
                           <Text style={styles.participantStatusText}>
-                            Trạng thái: <Text style={{fontWeight: "bold", color: pStatus === "pending" ? colors.warning : pStatus === "approved" ? colors.success : colors.danger}}>{pStatus}</Text>
+                            Trạng thái: <Text style={{fontWeight: "bold", color: pStatus === "pending" ? colors.warning : pStatus === "approved" ? colors.success : colors.danger}}>{formatParticipantStatus(pStatus)}</Text>
                           </Text>
                           {p.note ? <Text style={{fontSize: 12, fontStyle: "italic", color: colors.textLight, marginTop: 2}}>"{p.note}"</Text> : null}
                         </View>
@@ -438,8 +476,24 @@ export default function PostDetailScreen({ route }) {
           {!isOwner && participationStatus === "rejected" ? (
             <NoticeCard icon="close-circle-outline" title="Yêu cầu đã bị từ chối" description="Bạn có thể gửi lại yêu cầu tham gia." backgroundColor="#FEE2E2" iconColor={colors.danger} />
           ) : null}
+
+          {!isOwner && (
+            <View style={styles.reportContainer}>
+              <Pressable style={styles.reportButton} onPress={() => setReportModalVisible(true)}>
+                <Ionicons name="warning-outline" size={16} color={colors.textLight} />
+                <Text style={styles.reportButtonText}>Báo cáo bài viết này</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </ScrollView>
+
+      {/* MODAL BÁO CÁO */}
+      <ReportPostModal 
+        visible={reportModalVisible} 
+        onClose={() => setReportModalVisible(false)} 
+        postId={postId} 
+      />
 
       <SafeAreaView edges={["bottom"]} style={styles.bottomSafeArea}>
         <View style={styles.bottomBar}>
@@ -449,8 +503,18 @@ export default function PostDetailScreen({ route }) {
           </Pressable>
 
           {isOwner ? (
-            <View style={styles.ownerButton}>
-              <Text style={styles.ownerButtonText}>Bài đăng của bạn</Text>
+            <View style={styles.ownerActionsWrapper}>
+              <Pressable style={styles.deleteButton} onPress={handleDeletePost} disabled={actionLoading === "delete"}>
+                {actionLoading === "delete" ? (
+                  <ActivityIndicator size="small" color={colors.danger} />
+                ) : (
+                  <Ionicons name="trash-outline" size={22} color={colors.danger} />
+                )}
+              </Pressable>
+              
+              <Pressable style={styles.editButton} onPress={() => navigation.navigate("EditPost", { postId: post.id })} disabled={Boolean(actionLoading)}>
+                <Text style={styles.editButtonText}>Chỉnh sửa</Text>
+              </Pressable>
             </View>
           ) : null}
 
@@ -508,7 +572,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingBottom: 28,
+    paddingBottom: 140,
   },
   hero: {
     paddingHorizontal: spacing.lg,
@@ -694,6 +758,22 @@ const styles = StyleSheet.create({
   bottomSafeArea: {
     backgroundColor: colors.white,
   },
+  reportContainer: {
+    marginTop: 24,
+    alignItems: "center",
+  },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 8,
+  },
+  reportButtonText: {
+    marginLeft: 6,
+    color: colors.textLight,
+    fontSize: 13,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
   bottomBar: {
     minHeight: 76,
     paddingHorizontal: spacing.lg,
@@ -747,7 +827,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
   },
-  ownerButton: {
+  ownerActionsWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  deleteButton: {
+    width: 54,
+    minHeight: 54,
+    borderRadius: radius.lg,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  editButton: {
     flex: 1,
     minHeight: 54,
     borderRadius: radius.lg,
@@ -755,7 +849,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  ownerButtonText: {
+  editButtonText: {
     color: colors.primaryDark,
     fontSize: 14,
     fontWeight: "900",

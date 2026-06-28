@@ -11,8 +11,10 @@ import {
 import { WebView } from "react-native-webview";
 
 import { API_BASE_URL } from "../config/api";
+import { useNavigation } from "@react-navigation/native";
 
 export default function FieldMapScreen() {
+  const navigation = useNavigation();
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -62,7 +64,13 @@ export default function FieldMapScreen() {
             <strong>${escapeHtml(field.name)}</strong><br/>
             ${escapeHtml(field.address || "")}<br/>
             Loại sân: ${escapeHtml(field.field_type || "")}<br/>
-            Giá: ${field.price_per_hour ? Number(field.price_per_hour).toLocaleString("vi-VN") + "đ/giờ" : "Chưa cập nhật"}
+            Giá: ${field.price_per_hour ? Number(field.price_per_hour).toLocaleString("vi-VN") + "đ/giờ" : "Chưa cập nhật"}<br/>
+            <button 
+              onclick="window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'FIELD_CLICK', fieldId: ${field.id} }))"
+              style="margin-top: 8px; background-color: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;"
+            >
+              Xem chi tiết
+            </button>
           </div>
         `;
 
@@ -159,6 +167,16 @@ export default function FieldMapScreen() {
               source={{ html: mapHtml }}
               javaScriptEnabled
               domStorageEnabled
+              onMessage={(event) => {
+                try {
+                  const data = JSON.parse(event.nativeEvent.data);
+                  if (data.type === "FIELD_CLICK" && data.fieldId) {
+                    navigation.navigate("FieldDetail", { fieldId: data.fieldId });
+                  }
+                } catch (e) {
+                  console.log("Error parsing WebView message", e);
+                }
+              }}
             />
           </View>
 

@@ -71,6 +71,8 @@ export default function PostCard({
   const currentPlayers =
     Number(item?.current_players) || 0;
 
+  const isFieldPost = item?.post_type === "pass_field" || item?.post_type === "find_field";
+
   return (
     <Pressable
       onPress={onPress}
@@ -142,6 +144,18 @@ export default function PostCard({
       <View style={styles.informationContainer}>
         <View style={styles.informationRow}>
           <View style={styles.informationIcon}>
+            <Ionicons name="person-outline" size={18} color={colors.primary} />
+          </View>
+          <View style={styles.informationContent}>
+            <Text style={styles.informationLabel}>Người đăng</Text>
+            <Text style={styles.informationValue} numberOfLines={1}>
+              {item?.owner_name || "Thành viên Football Connect"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.informationRow}>
+          <View style={styles.informationIcon}>
             <Ionicons
               name="location-outline"
               size={18}
@@ -211,29 +225,46 @@ export default function PostCard({
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.footerChip}>
-          <Ionicons
-            name="people-outline"
-            size={15}
-            color={colors.textSecondary}
-          />
+        {!isFieldPost && (
+          <>
+            <View style={styles.footerChip}>
+              <Ionicons
+                name="people-outline"
+                size={15}
+                color={colors.textSecondary}
+              />
 
-          <Text style={styles.footerChipText}>
-            {currentPlayers}/{neededPlayers} người
-          </Text>
-        </View>
+              <Text style={styles.footerChipText}>
+                {currentPlayers}/{neededPlayers} người
+              </Text>
+            </View>
 
-        <View style={styles.footerChip}>
-          <Ionicons
-            name="shield-outline"
-            size={15}
-            color={colors.textSecondary}
-          />
+            <View style={styles.footerChip}>
+              <Ionicons
+                name="shield-outline"
+                size={15}
+                color={colors.textSecondary}
+              />
 
-          <Text style={styles.footerChipText}>
-            {formatLevel(item?.required_level)}
-          </Text>
-        </View>
+              <Text style={styles.footerChipText}>
+                {formatLevel(item?.required_level)}
+              </Text>
+            </View>
+          </>
+        )}
+        {item?.contact_phone && (
+          <View style={styles.footerChip}>
+            <Ionicons
+              name="call-outline"
+              size={15}
+              color={colors.textSecondary}
+            />
+
+            <Text style={styles.footerChipText}>
+              {item.contact_phone}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.fieldTypeBadge}>
           <Text style={styles.fieldTypeText}>

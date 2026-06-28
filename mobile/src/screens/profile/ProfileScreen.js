@@ -1,12 +1,18 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   Pressable,
   StyleSheet,
   Text,
   View,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useFocusEffect } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
+import apiClient from "../../services/apiClient";
 
 import { useAuth } from "../../context/AuthContext";
 
@@ -17,24 +23,49 @@ import {
   spacing,
 } from "../../theme/theme";
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
+
+  const [stats, setStats] = useState({ posts: 0, joined: 0, reviews: "—" });
+  const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchStats = async () => {
+        setLoading(true);
+        try {
+          const [postsRes, partsRes] = await Promise.all([
+            apiClient.get("/api/v1/posts/my").catch(() => ({ data: [] })),
+            apiClient.get("/api/v1/participants/my").catch(() => ({ data: [] }))
+          ]);
+
+          const posts = Array.isArray(postsRes.data) ? postsRes.data : postsRes.data?.items || [];
+          const parts = Array.isArray(partsRes.data) ? partsRes.data : partsRes.data?.items || [];
+
+          const approvedParts = parts.filter(p => p.status === "approved");
+
+          setStats({
+            posts: posts.length,
+            joined: approvedParts.length,
+            reviews: "—"
+          });
+        } catch (error) {
+          console.log("Lỗi tải thống kê Profile", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchStats();
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.topRow}>
-          <View />
-
-          <Pressable style={styles.settingsButton}>
-            <Ionicons
-              name="settings-outline"
-              size={22}
-              color={colors.text}
-            />
-          </Pressable>
-        </View>
-
+      <StatusBar style="dark" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
         <View style={styles.avatar}>
           <Ionicons
             name="person"
@@ -60,50 +91,52 @@ export default function ProfileScreen() {
         </Text>
 
         <View style={styles.statistics}>
-          <StatisticItem
-            value="0"
-            label="Bài đăng"
-          />
-
-          <View style={styles.divider} />
-
-          <StatisticItem
-            value="0"
-            label="Trận tham gia"
-          />
-
-          <View style={styles.divider} />
-
-          <StatisticItem
-            value="0"
-            label="Đánh giá"
-          />
+          {loading ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : (
+            <>
+              <StatisticItem value={stats.posts} label="Bài đăng" />
+              <View style={styles.divider} />
+              <StatisticItem value={stats.joined} label="Trận tham gia" />
+              <View style={styles.divider} />
+              <StatisticItem value={stats.reviews} label="Đánh giá" />
+            </>
+          )}
         </View>
 
         <View style={styles.menuCard}>
           <MenuItem
             icon="person-outline"
             label="Thông tin cá nhân"
+            onPress={() => navigation.navigate("EditProfile")}
           />
 
           <MenuItem
             icon="calendar-outline"
             label="Kèo của tôi"
+            onPress={() => navigation.navigate("MyPosts")}
           />
 
           <MenuItem
             icon="bookmark-outline"
             label="Bài đã lưu"
+            onPress={() => navigation.navigate("SavedPosts")}
           />
 
-          <MenuItem
-            icon="star-outline"
-            label="Đánh giá sân bóng"
-          />
+          {(user?.role === "field_owner" || user?.role === "admin") && (
+            <MenuItem
+              icon="business-outline"
+              label="Quản lý sân bóng"
+              onPress={() => navigation.navigate("MyFields")}
+            />
+          )}
 
           <MenuItem
-            icon="help-circle-outline"
-            label="Trợ giúp"
+            icon="map-outline"
+            label="Tìm sân"
+            onPress={() => navigation.navigate("FieldMap")}
             last
           />
         </View>
@@ -122,7 +155,7 @@ export default function ProfileScreen() {
             Đăng xuất
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -145,6 +178,7 @@ function MenuItem({
   icon,
   label,
   last = false,
+  onPress,
 }) {
   return (
     <Pressable
@@ -152,6 +186,7 @@ function MenuItem({
         styles.menuItem,
         last && styles.menuItemLast,
       ]}
+      onPress={onPress}
     >
       <View style={styles.menuLeft}>
         <Ionicons
@@ -180,32 +215,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
-  container: {
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
     paddingHorizontal: spacing.lg,
+    paddingBottom: 140,
     alignItems: "center",
-  },
-
-  topRow: {
-    width: "100%",
-    paddingTop: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  settingsButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
   },
 
   avatar: {
     width: 96,
     height: 96,
-    marginTop: 4,
+    marginTop: 24,
     borderRadius: 48,
     borderWidth: 3,
     borderColor: colors.white,

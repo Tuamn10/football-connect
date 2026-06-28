@@ -14,6 +14,17 @@ def get_fields(db: Session, skip: int = 0, limit: int = 100):
     )
 
 
+def get_fields_by_owner(db: Session, owner_id: int, skip: int = 0, limit: int = 100):
+    return (
+        db.query(FootballField)
+        .filter(FootballField.owner_id == owner_id)
+        .order_by(FootballField.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
 def get_field_by_id(db: Session, field_id: int) -> FootballField | None:
     return db.query(FootballField).filter(FootballField.id == field_id).first()
 
