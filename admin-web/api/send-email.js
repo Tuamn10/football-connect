@@ -33,10 +33,11 @@ export default async function handler(req, res) {
   }
 
   try {
+    const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,
-      secure: process.env.SMTP_USE_TLS === 'true' ? false : true, // false for 587, true for 465
+      port: port,
+      secure: port === 465, // true for 465, false for other ports
       auth: {
         user: process.env.SMTP_USERNAME,
         pass: process.env.SMTP_PASSWORD,
