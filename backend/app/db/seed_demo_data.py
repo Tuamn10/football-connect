@@ -93,6 +93,7 @@ def get_or_create_post(
     cost,
     description,
     status="open",
+    contact_phone=None,
 ):
     post = db.query(Post).filter(Post.title == title).first()
 
