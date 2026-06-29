@@ -22,25 +22,27 @@ def send_password_reset_email(to_email: str, otp: str) -> bool:
         print("=" * 60 + "\n")
         return True
 
-    required_config = {
-        "SMTP_HOST": settings.SMTP_HOST,
-        "SMTP_USERNAME": settings.SMTP_USERNAME,
-        "SMTP_PASSWORD": settings.SMTP_PASSWORD,
-        "SMTP_FROM_EMAIL": settings.SMTP_FROM_EMAIL,
-    }
+    # Nếu có cấu hình EMAIL_RELAY_URL thì bỏ qua check cấu hình SMTP cục bộ
+    if not getattr(settings, 'EMAIL_RELAY_URL', None):
+        required_config = {
+            "SMTP_HOST": settings.SMTP_HOST,
+            "SMTP_USERNAME": settings.SMTP_USERNAME,
+            "SMTP_PASSWORD": settings.SMTP_PASSWORD,
+            "SMTP_FROM_EMAIL": settings.SMTP_FROM_EMAIL,
+        }
 
-    missing = [
-        name
-        for name, value in required_config.items()
-        if not value
-    ]
+        missing = [
+            name
+            for name, value in required_config.items()
+            if not value
+        ]
 
-    if missing:
-        print(
-            "Cannot send password reset email. "
-            f"Missing SMTP settings: {', '.join(missing)}"
-        )
-        return False
+        if missing:
+            print(
+                "Cannot send password reset email. "
+                f"Missing SMTP settings: {', '.join(missing)}"
+            )
+            return False
 
     message = EmailMessage()
     message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
