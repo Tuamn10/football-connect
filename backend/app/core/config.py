@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     PASSWORD_RESET_OTP_MAX_ATTEMPTS: int = 5
     PASSWORD_RESET_RESEND_SECONDS: int = 60
     PASSWORD_RESET_DEBUG: bool = False
+    
+    # Email Relay Configuration (For bypassing Render SMTP block)
+    EMAIL_RELAY_URL: str | None = None
+    EMAIL_RELAY_KEY: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

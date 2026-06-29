@@ -60,6 +60,34 @@ Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.
 """
     message.set_content(text_content, charset="utf-8")
 
+    # Bỏ qua SMTP và dùng HTTP Relay (Vercel) nếu được cấu hình (ví dụ trên Render bị chặn port 587)
+    if getattr(settings, 'EMAIL_RELAY_URL', None):
+        import urllib.request
+        import json
+        try:
+            req = urllib.request.Request(
+                settings.EMAIL_RELAY_URL,
+                data=json.dumps({
+                    "to": to_email,
+                    "subject": message["Subject"],
+                    "text": text_content
+                }).encode('utf-8'),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {getattr(settings, 'EMAIL_RELAY_KEY', '')}"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as response:
+                if response.status == 200:
+                    return True
+                logger.error(f"Email Relay returned status {response.status}")
+                return False
+        except Exception as e:
+            logger.error(f"Error calling Email Relay: {e}")
+            return False
+
+    # Fallback back to standard SMTP if Relay is not configured
     try:
         with smtplib.SMTP(
             settings.SMTP_HOST,
