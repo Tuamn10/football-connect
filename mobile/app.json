@@ -11,6 +11,7 @@
     },
     "android": {
       "softwareKeyboardLayoutMode": "resize",
+      "package": "com.tuamn10.footballconnect",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
