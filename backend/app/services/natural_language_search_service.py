@@ -52,7 +52,8 @@ class NaturalLanguageSearchService:
         if self.enabled:
             kwargs = {
                 "api_key": settings.ASSISTANT_API_KEY,
-                "timeout": settings.ASSISTANT_TIMEOUT
+                "timeout": 3.0,
+                "max_retries": 0
             }
             if settings.ASSISTANT_BASE_URL:
                 kwargs["base_url"] = settings.ASSISTANT_BASE_URL
