@@ -39,6 +39,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (error.response && error.response.status === 401) {
+      await AsyncStorage.removeItem("access_token");
+      await AsyncStorage.removeItem("user_info");
+      // Note: In React Native, navigating outside of components requires a navigation ref.
+      // Since we don't have it here easily, clearing the token will trigger re-render 
+      // if the app uses a context to check auth state.
+    }
     return Promise.reject(error);
   }
 );

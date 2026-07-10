@@ -117,6 +117,11 @@ export default function AssistantScreen() {
         },
       ]);
     } catch (error) {
+      let errorDetail = error.message;
+      if (error.response) {
+        errorDetail += ` (Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)})`;
+      }
+      
       console.log('ASSISTANT ERROR DETAIL:', {
         message: error.message,
         status: error.response?.status,
@@ -130,7 +135,7 @@ export default function AssistantScreen() {
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          text: "Xin lỗi, đã xảy ra lỗi khi kết nối với máy chủ. Vui lòng thử lại sau.",
+          text: `Xin lỗi, đã xảy ra lỗi: ${errorDetail}`,
           posts: [],
           context: currentContext,
         },
